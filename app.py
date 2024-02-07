@@ -1,10 +1,9 @@
 from SpotifyAPI import SpotifyAPI 
+from TicketmasterAPI import TickemasterAPI
 import openstreetmap
 import secret
 
-def getArtistsNames():
-    spoty = SpotifyAPI(secret.getClientID(), secret.getClientSecret(), 'user-follow-read', 8888)
-    
+def getArtistsNames(spoty):   
     names = []
     
     if(spoty.access_token):
@@ -17,11 +16,11 @@ def getArtistsNames():
 
 def getLocation():
     
-    print("Inserisci il nome della città: ")
+    print("Dove vuoi cercare l'evento?")
     
     place = None
     
-    nomeTappa = input("Dove vuoi cercare l'evento?")
+    nomeTappa = input("Inserisci il nome della città: ")
     places = openstreetmap.getPlaces(nomeTappa)
     
     while(place == None):
@@ -48,8 +47,28 @@ def getLocation():
 if __name__ == '__main__':
     print("Benvenuto")
     
-    #artists = getArtistsNames()
+    spoty = SpotifyAPI(secret.getClientID(), secret.getClientSecret(), 'user-follow-read', 8888)
+    artists = getArtistsNames(spoty)
     
-    #location = getLocation()
+    location = getLocation()
     
+    ticketmaster = TickemasterAPI(secret.getTicketmasterKey())
+    
+    radius = '-1'
+    while(not radius.isnumeric() or not (int(radius) > 0 and int(radius) < 20000)):
+        radius = input("Inserire il raggio in cui cercare: ")
+        
+    locale = location['address']['country_code']
+    
+    artists_events = {}
+    
+    for artist in artists:
+        events = ticketmaster.getEvents(locale, int(radius), artist, location['lat'], location['lon'])
+        if(events):
+            print(f"Evento per {artist}: " + events[0]['url'])
+            artists_events[artist] = events
+    
+    print("Grazie per aver usato il nostro servizio")
+    
+    #all'interno di artists_events ci sono tutti gli eventi vicini per ogni artista, quindi si possono esplorare altre servizi
     
